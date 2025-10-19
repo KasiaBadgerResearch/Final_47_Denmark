@@ -1,0 +1,51 @@
+# How has the share of women with tertiary education evolved relative to that of the overall population in Denmark between 1960 and 2010?
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+
+# Folders
+data_raw_folder = "data_raw/"
+data_clean_folder = "data_clean/"
+figures_folder = "figures/"
+
+# Load CSV
+filename = "education_dnk_filtered.csv"  # Filtered dataset with only relevant rows
+df = pd.read_csv(os.path.join(data_raw_folder, filename))
+
+# Keep only needed columns
+df = df[["Year", "Indicator Name", "Value"]]
+
+# Convert Year and Value to numeric, drop invalid rows
+df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+df = df.dropna(subset=["Year", "Value"])
+
+# Pivot indicators into separate columns
+df_pivot = df.pivot(index="Year", columns="Indicator Name", values="Value").reset_index()
+df_pivot = df_pivot.sort_values("Year")
+
+print("Pivoted Denmark dataset:")
+display(df_pivot)
+
+# Interpolate missing values for smooth plotting (optional)
+df_plot = df_pivot.interpolate(method='linear')
+
+# Plot the indicators
+plt.figure(figsize=(10,6))
+plt.plot(df_plot["Year"], df_plot["Barro-Lee: Percentage of female population age 25+ with tertiary schooling. Completed Tertiary"], 
+         marker='o', linestyle='-', label="Percentage of female population age 25+ with tertiary schooling")
+plt.plot(df_plot["Year"], df_plot["Barro-Lee: Percentage of population age 25+ with tertiary schooling. Completed Tertiary"], 
+         marker='o', linestyle='-', label="Percentage of population age 25+ with tertiary schooling")
+
+plt.title("Denmark: Female vs Total population age 25+ with tertiary schooling (%) (1960-2010)")
+plt.xlabel("Year")
+plt.ylabel("Percentage")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(os.path.join(figures_folder, "denmark_female_vs_total_population_with_tertiary_schooling.png"))
+plt.show()
+
+# Save cleaned CSV
+df_pivot.to_csv(os.path.join(data_clean_folder, "denmark_female_vs_total_population_with_tertiary_schooling"), index=False)
